@@ -125,6 +125,7 @@ def calculate_mass(results: list, configurations: list, material):
             volume = area * section.comprimento
             mass = volume * material.rho
 
+
             results[config_index]["Sections Results"][section_index]["Mass"] = float(mass)
             total_mass += mass
             total_mass *= 2

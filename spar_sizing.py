@@ -127,6 +127,7 @@ def calculate_mass(results: list, configurations: list, material):
 
             results[config_index]["Sections Results"][section_index]["Mass"] = float(mass)
             total_mass += mass
+            total_mass *= 2
 
         results[config_index]["TotalMass"] = float(total_mass)
 

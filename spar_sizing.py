@@ -1,7 +1,11 @@
 from sections import SectionCircular, SectionRectangular
+from spar_segment import SparSegment
 import numpy as np
+import pandas as pd
 import math, json
 
+df = pd.read_excel("DIMENSIONAMENTO LONGARINA - SUPERIOR.xlsx")
+df = df.iloc[:35]
 
 class Material:
     def __init__(self, nome: str, E: float, sigma_adm: float, rho: float):
@@ -22,143 +26,208 @@ class GeometriaSecao:
 
 
 
+BALSA = Material("Balsa", 3e9, 15e6, 200.0)
+FIBRA_CARBONO = Material("Fibra de Carbono", 230e9, 650e6, 1750.0)
 
 sectionsRetangular = []
 sectionsCircular = []
 
 for espessura in np.arange(0.001, 0.006, 0.001):
-    sections = [
-        SectionRectangular(base=0.06, altura=0.032, espessura=espessura),
-        SectionRectangular(base=0.048, altura=0.02, espessura=espessura),
-        SectionRectangular(base=0.04, altura=0.01, espessura=espessura),
+    segments = [
+        SparSegment(
+            y_start=0.0,
+            y_end=0.3,
+            section=SectionRectangular(base=0.06, altura=0.032, espessura=espessura, material=BALSA)
+        ),
+        SparSegment(
+            y_start=0.3,
+            y_end=0.7,
+            section=SectionRectangular(base=0.048, altura=0.02, espessura=espessura, material=BALSA)
+        ),
+        SparSegment(
+            y_start=0.7,
+            y_end=1.0,
+            section=SectionRectangular(base=0.04, altura=0.01, espessura=espessura, material=BALSA)
+        ),
     ]
 
-    sectionsRetangular.append(sections)
+    sectionsRetangular.append(segments)
 
-    sections = [
-        SectionCircular(diametro_ext=0.024, espessura=espessura), 
-        SectionCircular(diametro_ext=0.032, espessura=espessura), 
-        SectionCircular(diametro_ext=0.04, espessura=espessura),
+    segments = [
+        SparSegment(
+            y_start=0.0, 
+            y_end=0.3, 
+            section=SectionCircular(diametro_ext=0.024, espessura=espessura, material=FIBRA_CARBONO)
+        ),
+        SparSegment(
+            y_start=0.3, 
+            y_end=0.7, 
+            section=SectionCircular(diametro_ext=0.032, espessura=espessura, material=FIBRA_CARBONO)
+        ),
+        SparSegment(
+            y_start=0.7, 
+            y_end=1.0, 
+            section=SectionCircular(diametro_ext=0.04, espessura=espessura, material=FIBRA_CARBONO)
+        )
     ]
 
-    sectionsCircular.append(sections)
+    sectionsCircular.append(segments)
 
 
-BALSA = Material("Balsa", 2e9, 15e6, 200.0)
-FIBRA_CARBONO = Material("Fibra de Carbono", 230e9, 650e6, 1750.0)
 
 
-# CALCULAR INÉRCIA E DISTÂNCIA À LINHA NEUTRA PARA CADA TIPO DE SEÇÃO
-
-def calculate_inertia_per_section(list_of_sections: list):
+# FORMULAS DOS CALCULOS
+def calculate_inertia_per_section(section):
 
     results = []
 
-    for configuration in list_of_sections:
+    # SEÇÃO CIRCULAR TUBULAR
+    if section.type == "circular":
 
-        total_inertia = 0
-        max_c = 0
+        externalDiameter = section.diametro_ext
+        internalDiameter = (externalDiameter - 2 * section.espessura)
+        inertia = (math.pi / 64) * (externalDiameter**4 - internalDiameter**4)
 
-        section_results = []
+        c = externalDiameter / 2
 
-        for section in configuration:
+    # SEÇÃO RETANGULAR
+    elif section.type == "retangular":
 
-            # SEÇÃO CIRCULAR TUBULAR
-            if section.type == "circular":
+        minBase = section.base - 2 * section.espessura
+        maxBase = section.base
+        minAltura = section.altura - 2 * section.espessura
+        maxAltura = section.altura
 
-                externalDiameter = section.diametro_ext
-                internalDiameter = (externalDiameter - 2 * section.espessura)
-                inertia = (math.pi / 64) * (externalDiameter**4 - internalDiameter**4)
+        inertia = ((maxBase * maxAltura**3) / 12 - (minBase * minAltura**3) / 12)
+        c = maxAltura / 2
 
-                c = externalDiameter / 2
+    results.append({
+        "Inertia": inertia,
+        "DistanceC": c,
+        "Thickness": section.espessura
+    })
 
-            # SEÇÃO RETANGULAR
-            elif section.type == "retangular":
+    return results
 
-                minBase = section.base - 2 * section.espessura
-                maxBase = section.base
-                minAltura = section.altura - 2 * section.espessura
-                maxAltura = section.altura
+def calculate_bending_stress(M: float, C: float, I: float):
+    sigma = (M * C) / I
+    return sigma
 
-                inertia = ((maxBase * maxAltura**3) / 12 - (minBase * minAltura**3) / 12)
-                c = maxAltura / 2
+def calculate_safety_factor(sigma_adm: float, sigma_max: float):
+    return sigma_adm / sigma_max
 
-            section_results.append({
+def calculate_structural_curvature(M: float, E: float, I: float):
+    return M / (E * I) 
 
-                "Type": section.type,
-                "Inertia": inertia,
-                "DistanceC": c
-            })
+def calculate_angle(theta: float, structural_curvature: float, dy: float):
+    return theta + structural_curvature * dy
 
-            total_inertia += inertia
+def calculate_deflection(deflection: float, angle: float, dy: float):
+    return deflection + angle * dy
 
-            if c > max_c:
-                max_c = c
+
+# INICIO DA ANALISE
+def get_segment(y: float, segments: list):
+    for segment in segments:
+        if segment.contains(y):
+            return segment
+        
+    return None
+
+def analyze_span(configuration, df):
+    results = []
+    theta = 0.0
+    deflection = 0.0
+    
+    mass_data = calculate_mass(configuration=configuration)
+
+    for _, row in df.iterrows():
+        y = float(row["Posição y (m)"])
+        m = float(row["Momento M (N.m)"])
+        dy = float(row["dy (m)"])
+
+        segment = get_segment(y, configuration)
+
+        if segment is None:
+            continue
+
+        section = segment.section
+
+        inertia_data = calculate_inertia_per_section(section)
+        inertia = inertia_data[0]["Inertia"]
+        c = inertia_data[0]["DistanceC"]
+        thickness = inertia_data[0]["Thickness"]
+
+        sigma = calculate_bending_stress(m, c, inertia)
+        safety_factor = calculate_safety_factor(section.material.sigma_adm, sigma) 
+        structural_curvature = calculate_structural_curvature(m, section.material.E, inertia)
+
+        theta = calculate_angle(theta=theta, structural_curvature=structural_curvature, dy=dy)
+        deflection = calculate_deflection(deflection=deflection, angle=theta, dy=dy)
 
         results.append({
-            "Inertia": total_inertia,
-            "DistanceC": max_c,
-            "Thickness": configuration[0].espessura,    
-            "Sections Results": section_results
+            "Y": y,
+            "Inertia": inertia,
+            "DistanceC": c,
+            "Thickness": thickness,
+            "Sigma": sigma,
+            "Safety Factor": safety_factor,
+            "M/EI": structural_curvature,
+            "Angle": theta,
+            "Deflection": deflection,
+            "Total mass": mass_data["TotalMass"],
+            "Mass Per Section": mass_data["SectionsMass"]
         })
 
     return results
 
+# CALCULAR INÉRCIA E DISTÂNCIA À LINHA NEUTRA PARA CADA TIPO DE SEÇÃO
+
+
+
 # CALCULAR MASSA POR SEÇÃO COM BASE NA GEOMETRIA E MATERIAL
 
-def calculate_mass(results: list, configurations: list, material):
-    for config_index, config in enumerate(configurations):
+def calculate_mass(configuration):
+    total_mass = 0.0
+    section_masses = []
 
-        total_mass = 0
+    for segment in configuration:
+        section = segment.section
+        comprimento = segment.y_end - segment.y_start
 
-        for section_index, section in enumerate(config):
-            if section.type == "retangular":
-                area = ((section.base * section.altura) - ((section.base - 2 * section.espessura)
-                        * (section.altura - 2 * section.espessura)))
-                
-            elif section.type == "circular":
-                d_ext = section.diametro_ext
-                d_int = d_ext - 2 * section.espessura
+        if section.type == "retangular":
+            area = ((section.base * section.altura) - (
+                (section.base - 2 * section.espessura) * (section.altura - 2 * section.espessura)
+                ))
+            
+        elif section.type == "circular":
+            extern_diameter = section.diametro_ext
+            intern_diameter = extern_diameter - 2 * section.espessura
+            area = (math.pi / 4) * (extern_diameter**2 - intern_diameter**2)
 
-                area = (math.pi / 4) * (d_ext**2 - d_int**2)
+        volume = area * comprimento
+        mass = volume * section.material.rho
 
-            volume = area * section.comprimento
-            mass = volume * material.rho
+        section_masses.append({
+            "SectionType": section.type,
+            "Length": comprimento,
+            "Mass": mass
+        })
 
+        total_mass += mass
+    
+    total_mass *= 2
 
-            results[config_index]["Sections Results"][section_index]["Mass"] = float(mass)
-            total_mass += mass
-            total_mass *= 2
+    return {
+        "SectionsMass": section_masses,
+        "TotalMass": total_mass
+    }
 
-        results[config_index]["TotalMass"] = float(total_mass)
-
-    return results
 
 # AVALIAR A CONFIGURAÇÃO COM BASE NOS REQUISITOS DE ESPAÇO, TENSÃO, FATOR DE SEGURANÇA E MASSA
 
-def calculate_bending_stress(results: list, M: float):
-    for config in results:
-        for section in config["Sections Results"]:
-            sigma = (M * section["DistanceC"]) / section["Inertia"]
-            section["Bending Stress"] = sigma
 
-    return results 
 
-def calcular_fator_seguranca(sigma_adm: float, sigma_max: float):
-    return sigma_adm / sigma_max
-
-def calcular_curvatura_estrutural(M: float, E: float, I: float):
-    return M / (E * I) 
-
-def calcular_angulo(curvatura_estrutural: float):
-    x = np.linspace(1.61051E-06, 0.57786453, 30)  
-    y = np.full_like(x, curvatura_estrutural)
-    return np.trapezoid(y, x) 
-
-def calcular_deflexao(angle: float):
-    x = np.linspace(0, 0.01799696, 30)
-    y = np.full_like(x, angle)
-    return np.trapezoid(y, x)
 
 
 # OTIMIZAÇÃO DA LONGARINA
@@ -169,7 +238,7 @@ def otimizar_longarina(sections, material, M):
     for section in sections:
         I, c = calculate_inertia_per_section([section])
         sigma_max = calculate_bending_stress(M, I[0], c[0])
-        fator_seguranca = calcular_fator_seguranca(material.sigma_adm, sigma_max)
+        fator_seguranca = calculate_safety_factor(material.sigma_adm, sigma_max)
         
         if fator_seguranca >= 1.5:  # Fator de segurança mínimo
             massa = calculate_mass(section, material)
@@ -180,19 +249,19 @@ def otimizar_longarina(sections, material, M):
     return melhor_configuracao, melhor_massa
 
 if __name__ == "__main__":
-    results = calculate_inertia_per_section(sectionsRetangular)
-    results = calculate_bending_stress(results=results, M=-0.00009091877047)
-    results = calculate_mass(results, sectionsRetangular, BALSA)
-    print(json.dumps(results, indent=4, default=float))
 
-    print("")
-    print("============================")
-    print("============================")
-    print("============================")
-    print("============================")
-    print("")
+    all_results = []
 
-    results = calculate_inertia_per_section(sectionsCircular)
-    results = calculate_bending_stress(results=results, M=-0.00009091877047)
-    results = calculate_mass(results, sectionsCircular, FIBRA_CARBONO)
-    print(json.dumps(results, indent=4, default=float))
+    for configuration in sectionsRetangular:
+        results = analyze_span(configuration=configuration, df=df)
+        all_results.extend(results)
+    #print(json.dumps(all_results, indent=4, default=float))
+
+    for result in all_results:
+        result["Mass Per Section"] = json.dumps(result["Mass Per Section"])
+
+    df_results = pd.DataFrame(all_results)
+
+    df_results.to_csv("resultado_longarina.csv", index=False)
+
+    print("CSV exportado com sucesso!")

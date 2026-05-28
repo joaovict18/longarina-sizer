@@ -231,3 +231,43 @@ def analyze_span(configuration, df):
         })
 
     return results
+
+
+# Função de otimização: encontra a melhor configuração
+def otimizar_longarina(sections, material, M):
+    melhor_configuracao = None
+    melhor_massa = float('inf')
+    
+    for section in sections:
+        I, c = calculate_inertia_per_section([section])
+        sigma_max = calculate_bending_stress(M, I[0], c[0])
+        fator_seguranca = calculate_safety_factor(material.sigma_adm, sigma_max)
+        
+        if fator_seguranca >= 1.5:  # Fator de segurança mínimo
+            massa = calculate_mass(section, material)
+            if massa < melhor_massa:
+                melhor_massa = massa
+                melhor_configuracao = section
+
+    return melhor_configuracao, melhor_massa
+
+
+# ========== PROGRAMA PRINCIPAL ==========
+
+if __name__ == "__main__":
+    all_results = []
+
+    # Analisa todas as configurações retangulares
+    for configuration in sectionsRetangular:
+        results = analyze_span(configuration=configuration, df=df)
+        all_results.extend(results)
+
+    # Converte dados para formato compatível com CSV
+    for result in all_results:
+        result["Mass Per Section"] = json.dumps(result["Mass Per Section"])
+
+    # Cria DataFrame e exporta para CSV
+    df_results = pd.DataFrame(all_results)
+    df_results.to_csv("resultado_longarina.csv", index=False)
+
+    print("✅ CSV exportado com sucesso: resultado_longarina.csv")

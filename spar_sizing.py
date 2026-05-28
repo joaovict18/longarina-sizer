@@ -129,3 +129,44 @@ def calculate_angle(theta: float, structural_curvature: float, dy: float):
 # Integra ângulo para calcular deflexão (v = ∫θ dy)
 def calculate_deflection(deflection: float, angle: float, dy: float):
     return deflection + angle * dy
+
+
+# Calcula massa da estrutura por seção e total
+def calculate_mass(configuration):
+    total_mass = 0.0
+    section_masses = []
+
+    for segment in configuration:
+        section = segment.section
+        comprimento = segment.y_end - segment.y_start
+
+        # Calcula área dependendo da geometria
+        if section.type == "retangular":
+            area = ((section.base * section.altura) - (
+                (section.base - 2 * section.espessura) * (section.altura - 2 * section.espessura)
+                ))
+            
+        elif section.type == "circular":
+            extern_diameter = section.diametro_ext
+            intern_diameter = extern_diameter - 2 * section.espessura
+            area = (math.pi / 4) * (extern_diameter**2 - intern_diameter**2)
+
+        # Calcula massa: m = ρ * V = ρ * A * L
+        volume = area * comprimento
+        mass = volume * section.material.rho
+
+        section_masses.append({
+            "SectionType": section.type,
+            "Length": comprimento,
+            "Mass": mass
+        })
+
+        total_mass += mass
+    
+    # Multiplica por 2 para considerar ambas as meias asas
+    total_mass *= 2
+
+    return {
+        "SectionsMass": section_masses,
+        "TotalMass": total_mass
+    }

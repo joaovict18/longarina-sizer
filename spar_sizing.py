@@ -117,3 +117,15 @@ def calculate_bending_stress(M: float, C: float, I: float):
 # Calcula fator de segurança (FS = sigma_adm / sigma)
 def calculate_safety_factor(sigma_adm: float, sigma_max: float):
     return sigma_adm / sigma_max
+
+# Calcula curvatura estrutural (κ = M / EI)
+def calculate_structural_curvature(M: float, E: float, I: float):
+    return M / (E * I) 
+
+# Integra curvatura para calcular ângulo (θ = ∫κ dy)
+def calculate_angle(theta: float, structural_curvature: float, dy: float):
+    return theta + structural_curvature * dy
+
+# Integra ângulo para calcular deflexão (v = ∫θ dy)
+def calculate_deflection(deflection: float, angle: float, dy: float):
+    return deflection + angle * dy

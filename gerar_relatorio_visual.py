@@ -16,13 +16,13 @@ df = pd.read_csv("resultado_longarina.csv")
 
 # Verificar se há comparação possível
 materiais = df['Material'].unique()
-print(f"\n📊 Materiais encontrados no CSV: {list(materiais)}")
+print(f"\nMateriais encontrados no CSV: {list(materiais)}")
 
 if len(materiais) == 1:
-    print(f"⚠️  Apenas 1 material ({materiais[0]}) - gerando relatório simples...")
+    print(f"Apenas 1 material ({materiais[0]}) - gerando relatório simples...")
     modo_comparacao = False
 else:
-    print(f"✅ 2 materiais encontrados - gerando comparação lado a lado!")
+    print(f"2 materiais encontrados - gerando comparação lado a lado!")
     modo_comparacao = True
 
 # Cores por material
@@ -141,25 +141,33 @@ if modo_comparacao:
     ax = axes[2, 1]
     ax.axis('off')
     
-    resumo_text = "📊 RESUMO COMPARATIVO\n" + "="*45 + "\n\n"
+    resumo_text = "RESUMO COMPARATIVO\n" + "="*45 + "\n\n"
     
     for material in ['Balsa', 'Fibra de Carbono']:
         subset = df[df['Material'] == material]
-        viavel = subset[subset['Safety Factor'] >= 1.5]
         
-        if len(viavel) > 0:
-            espessuras_viaveis = sorted(viavel['Thickness'].unique())
-            melhor_t = espessuras_viaveis[0]
-            melhor_subset = subset[subset['Thickness'] == melhor_t]
-            melhor_massa = melhor_subset['Total mass'].iloc[0]
-            melhor_fs = melhor_subset['Safety Factor'].min()
+        # Para cada espessura, calcular FS mínimo na envergadura
+        espessuras_viaveis = []
+        for t in sorted(subset['Thickness'].unique()):
+            config = subset[subset['Thickness'] == t]
+            fs_min = config['Safety Factor'].min()
+            if fs_min >= 1.5:  # Viável apenas se FS_min >= 1.5 em toda envergadura
+                massa = config['Total mass'].iloc[0]
+                espessuras_viaveis.append({'Thickness': t, 'FS_min': fs_min, 'Massa': massa})
+        
+        if len(espessuras_viaveis) > 0:
+            # Escolher a com menor massa entre as viáveis
+            melhor = min(espessuras_viaveis, key=lambda x: x['Massa'])
+            melhor_t = melhor['Thickness']
+            melhor_massa = melhor['Massa']
+            melhor_fs = melhor['FS_min']
             
-            resumo_text += f"✅ {material.upper()}\n"
+            resumo_text += f"{material.upper()}\n"
             resumo_text += f"   Melhor: {melhor_t*1000:.0f}mm\n"
             resumo_text += f"   Massa: {melhor_massa:.4f} kg\n"
             resumo_text += f"   FS mín: {melhor_fs:.3f}\n\n"
         else:
-            resumo_text += f"❌ {material.upper()}\n"
+            resumo_text += f"{material.upper()}\n"
             resumo_text += f"   Nenhuma configuração\n"
             resumo_text += f"   viável (FS < 1.5)\n\n"
     
@@ -236,10 +244,10 @@ else:
 
 plt.tight_layout()
 plt.savefig('relatorio_visual.png', dpi=300, bbox_inches='tight')
-print(f"\n✅ Gráfico salvo como: relatorio_visual.png")
+print(f"\nGráfico salvo como: relatorio_visual.png")
 
 if modo_comparacao:
     print("\n" + "="*80)
-    print("📊 COMPARAÇÃO - RESUMO MASSA POR MATERIAL E ESPESSURA")
+    print("COMPARAÇÃO - RESUMO MASSA POR MATERIAL E ESPESSURA")
     print("="*80)
     print(summary_df.to_string(index=False))

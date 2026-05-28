@@ -61,8 +61,11 @@ Material          | Melhor Config | Massa (kg) | FS Mínimo | Viável?
 Balsa             | 5.0 mm        | 0.2392     | 1.557     | ✅ Sim
 Fibra de Carbono  | 1.0 mm        | 0.3409     | 4.239     | ✅ Sim
 
-Conclusão: Balsa 5mm é mais leve (239g vs 341g)
-           Mas ambas atendem FS ≥ 1.5
+✅ CONCLUSÃO: Balsa 5mm é a MELHOR opção
+   - Mais leve: 239g vs 341g (29% menos peso)
+   - Atende FS ≥ 1.5 com margem mínima (1.557)
+   - Cumpre 100% todos os 6 Passos do PDF
+   - Recomendação: Usar Balsa 5mm para produção
 ```
 
 ### ✅ Conformidade PDF (6 Passos)

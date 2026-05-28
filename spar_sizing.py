@@ -215,9 +215,22 @@ def analyze_span(configuration, df):
         theta = calculate_angle(theta=theta, structural_curvature=structural_curvature, dy=dy)
         deflection = calculate_deflection(deflection=deflection, angle=theta, dy=dy)
 
+        # Extrai dimensões da seção
+        if section.type == "retangular":
+            base = section.base
+            altura = section.altura
+            diametro_ext = None
+        else:  # circular
+            base = None
+            altura = None
+            diametro_ext = section.diametro_ext
+
         # Armazena resultados
         results.append({
             "Y": y,
+            "Base": base,
+            "Altura": altura,
+            "Diametro_Externo": diametro_ext,
             "Inertia": inertia,
             "DistanceC": c,
             "Thickness": thickness,

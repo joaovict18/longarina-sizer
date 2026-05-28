@@ -76,3 +76,34 @@ for espessura in np.arange(0.001, 0.006, 0.001):
         )
     ]
     sectionsCircular.append(segments)
+
+
+# ========== FUNÇÕES DE CÁLCULO ==========
+
+# Calcula inércia (I) e distância à linha neutra (c) para seções retangulares e circulares
+def calculate_inertia_per_section(section):
+    results = []
+
+    # SEÇÃO CIRCULAR TUBULAR
+    if section.type == "circular":
+        externalDiameter = section.diametro_ext
+        internalDiameter = (externalDiameter - 2 * section.espessura)
+        inertia = (math.pi / 64) * (externalDiameter**4 - internalDiameter**4)
+        c = externalDiameter / 2
+
+    # SEÇÃO RETANGULAR
+    elif section.type == "retangular":
+        minBase = section.base - 2 * section.espessura
+        maxBase = section.base
+        minAltura = section.altura - 2 * section.espessura
+        maxAltura = section.altura
+        inertia = ((maxBase * maxAltura**3) / 12 - (minBase * minAltura**3) / 12)
+        c = maxAltura / 2
+
+    results.append({
+        "Inertia": inertia,
+        "DistanceC": c,
+        "Thickness": section.espessura
+    })
+
+    return results

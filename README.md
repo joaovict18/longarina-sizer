@@ -29,7 +29,7 @@ Saída: `resultado_longarina.csv` (176 linhas com análise de 35 pontos × 5 con
 
 ---
 
-## ⚙️ Como Funciona
+## Como Funciona
 
 ### 1. **Carregamento de Dados**
 Lê momento fletor (M) em 35 pontos da envergadura a partir do Excel:
@@ -156,9 +156,9 @@ for t in df["Thickness"].unique():
 
 ## Resultados Esperados
 
-✅ Balsa com espessura adequada (~5mm) é **mais leve** que Fibra  
-✅ Fator de segurança mínimo ocorre na **raiz da asa** (maior M)  
-✅ Deflexão acumula ao longo da envergadura  
+Balsa com espessura adequada (~5mm) é **mais leve** que Fibra  
+Fator de segurança mínimo ocorre na **raiz da asa** (maior M)  
+Deflexão acumula ao longo da envergadura  
 
 ---
 

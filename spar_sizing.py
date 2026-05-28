@@ -170,3 +170,64 @@ def calculate_mass(configuration):
         "SectionsMass": section_masses,
         "TotalMass": total_mass
     }
+
+
+# Função auxiliar: retorna o segmento que contém a posição y
+def get_segment(y: float, segments: list):
+    for segment in segments:
+        if segment.contains(y):
+            return segment
+    return None
+
+
+# Executa análise estrutural completa em toda a envergadura
+def analyze_span(configuration, df):
+    results = []
+    theta = 0.0
+    deflection = 0.0
+    
+    mass_data = calculate_mass(configuration=configuration)
+
+    for _, row in df.iterrows():
+        y = float(row["Posição y (m)"])
+        m = float(row["Momento M (N.m)"])
+        dy = float(row["dy (m)"])
+
+        segment = get_segment(y, configuration)
+
+        if segment is None:
+            continue
+
+        section = segment.section
+
+        # Calcula propriedades da seção
+        inertia_data = calculate_inertia_per_section(section)
+        inertia = inertia_data[0]["Inertia"]
+        c = inertia_data[0]["DistanceC"]
+        thickness = inertia_data[0]["Thickness"]
+
+        # Calcula tensão e fator de segurança
+        sigma = calculate_bending_stress(m, c, inertia)
+        safety_factor = calculate_safety_factor(section.material.sigma_adm, sigma) 
+        
+        # Calcula curvatura, ângulo e deflexão
+        structural_curvature = calculate_structural_curvature(m, section.material.E, inertia)
+        theta = calculate_angle(theta=theta, structural_curvature=structural_curvature, dy=dy)
+        deflection = calculate_deflection(deflection=deflection, angle=theta, dy=dy)
+
+        # Armazena resultados
+        results.append({
+            "Y": y,
+            "Inertia": inertia,
+            "DistanceC": c,
+            "Thickness": thickness,
+            "Sigma": sigma,
+            "Safety Factor": safety_factor,
+            "M/EI": structural_curvature,
+            "Angle": theta,
+            "Deflection": deflection,
+            "Total mass": mass_data["TotalMass"],
+            "Mass Per Section": mass_data["SectionsMass"]
+        })
+
+    return results

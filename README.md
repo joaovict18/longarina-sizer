@@ -1,12 +1,12 @@
 # Dimensionador de Longarinas - Spar Sizing
 
-## 📋 O que é?
+## O que é?
 
 Sistema computacional para análise estrutural de longarinas (vigas de reforço) de asas de aeronaves. Calcula propriedades estruturais, tensões, fatores de segurança e massa para diferentes configurações de materiais e espessuras.
 
 ---
 
-## 🚀 Início Rápido
+## Início Rápido
 
 ### Instalação
 ```bash
@@ -83,7 +83,7 @@ Massa = ρ × Area × comprimento × 2
 
 ---
 
-## 📊 Interpretação do CSV
+## Interpretação do CSV
 
 ### Colunas Principais
 
@@ -93,7 +93,7 @@ Massa = ρ × Area × comprimento × 2
 | **Thickness** | m | Espessura analisada | 0.001-0.005 |
 | **Inertia** | m⁴ | Resistência à flexão | Maior = melhor |
 | **Sigma** | Pa | Tensão desenvolvida | Menor = melhor |
-| **Safety Factor** | - | Margem de segurança | **≥ 1.5 obrigatório** ⚠️ |
+| **Safety Factor** | - | Margem de segurança | **≥ 1.5 obrigatório** |
 | **Deflection** | m | Deslocamento vertical | Menor = melhor |
 | **Total mass** | kg | Peso de ambas asas | Para otimização |
 
@@ -102,12 +102,12 @@ Massa = ρ × Area × comprimento × 2
 ```
 Linha 1 (Balsa 1mm, y=0.022m):
 ├─ Sigma = 29.36 MPa        (tensão alta)
-├─ Safety Factor = 0.511    ❌ FALHA (< 1.5)
+├─ Safety Factor = 0.511     FALHA (< 1.5)
 └─ Razão: espessura insuficiente
 
 Linha 176 (Balsa 5mm, y=0.958m):
 ├─ Sigma = 1.82 MPa         (tensão baixa)
-├─ Safety Factor = 8.24     ✓ SEGURO (>> 1.5)
+├─ Safety Factor = 8.24      SEGURO (>> 1.5)
 └─ Razão: espessura adequada, momento reduzido na ponta
 ```
 
@@ -132,10 +132,10 @@ for t in df["Thickness"].unique():
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
-├── spar_sizing.py              (código principal - 274 linhas)
+├── spar_sizing.py              (código principal)
 ├── sections.py                 (classes de seção)
 ├── spar_segment.py             (classes de segmento)
 ├── resultado_longarina.csv     (saída gerada)
@@ -145,7 +145,7 @@ for t in df["Thickness"].unique():
 
 ---
 
-## 🔧 Materiais Padrão
+## Materiais Padrão
 
 | Material | E (GPa) | σ_adm (MPa) | ρ (kg/m³) |
 |----------|---------|-------------|-----------|
@@ -154,7 +154,7 @@ for t in df["Thickness"].unique():
 
 ---
 
-## 📈 Resultados Esperados
+## Resultados Esperados
 
 ✅ Balsa com espessura adequada (~5mm) é **mais leve** que Fibra  
 ✅ Fator de segurança mínimo ocorre na **raiz da asa** (maior M)  
@@ -162,7 +162,7 @@ for t in df["Thickness"].unique():
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Erro: "Excel file not found"**
 ```bash
@@ -177,12 +177,10 @@ ls "DIMENSIONAMENTO LONGARINA - SUPERIOR.xlsx"
 
 ---
 
-## 📚 Referência
+## Referência
 
-- **PDF Base:** "Passo a passo: Dimensionamento Estrutural de Longarina"
+- **PDF Base:** "Passo a passo: Dimensionamento Estrutural de Longarina feito por Iasmim"
 - **Método:** Análise de vigas sob flexão pura
 - **Integração:** Método trapezoidal (dy = 0.001m)
 
 ---
-
-**Versão:** 1.0 | **Data:** Maio 2026 | **Branch:** jv

@@ -270,4 +270,4 @@ if __name__ == "__main__":
     df_results = pd.DataFrame(all_results)
     df_results.to_csv("resultado_longarina.csv", index=False)
 
-    print("✅ CSV exportado com sucesso: resultado_longarina.csv")
+    print("CSV exportado com sucesso: resultado_longarina.csv")

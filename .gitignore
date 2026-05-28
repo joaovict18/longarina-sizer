@@ -1,0 +1,26 @@
+# Ambientes virtuais Python
+.venv/
+venv/
+env/
+.env
+*.pyc
+__pycache__/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+~$*.xlsx
+
+# Arquivos temporários
+*.tmp
+.temp/
+
+# Apenas rastrear arquivos significativos do projeto
+!.gitkeep

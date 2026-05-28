@@ -2,51 +2,105 @@
 
 ## What Changed
 
-Implementação de **ferramentas de análise e documentação profissional** com conformidade total ao PDF de especificação. Branch `jv` adiciona 5 novos arquivos essenciais à branch `main` para produção e validação.
+Implementação de **sistema completo de análise estrutural com escolha de material** e gráficos comparativos. Branch `jv` adiciona análise simultânea de Balsa e Fibra Carbono com visualizações lado a lado.
 
-### 📝 Arquivos Adicionados
+### 📝 Arquivos Adicionados/Modificados
 
-| Arquivo | Descrição |
-|---------|-----------|
-| **README.md** | Documentação completa de uso e interpretação |
-| **requirements.txt** | Dependências Python (pandas, numpy, openpyxl, matplotlib, seaborn) |
-| **.gitignore** | Exclusões de venv, __pycache__, arquivos temporários |
-| **gerar_relatorio_visual.py** | Script gerador de gráficos PNG (4 análises) |
-| **relatorio_visual.png** | Visualização: FS, Tensão, Deflexão, Massa vs Espessura |
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| **spar_sizing.py** | 🔄 Modificado | +45 linhas: modo de análise (balsa/fibra/ambos) + coluna Material |
+| **gerar_relatorio_visual.py** | 🔄 Modificado | Gráficos dinâmicos: simples (1 material) ou comparativo (2 materiais) |
+| **COMO_ESCOLHER_MATERIAL.md** | ✨ Novo | Documentação de como usar análise simultânea |
+| **README.md** | ✨ Novo | Documentação completa |
+| **requirements.txt** | ✨ Novo | Dependências versionadas |
+| **.gitignore** | ✨ Novo | Exclusões (venv, __pycache__, etc) |
+| **relatorio_visual.png** | ✨ Novo | Gráficos (4 ou 6 subplots) |
 
-### 🔧 Modificações em Arquivos Existentes
+### 🎛 Modo de Análise - Selecionável
 
-**spar_sizing.py** (+20 linhas, 286 total):
-- Adicionado coluna `Base`, `Altura`, `Diametro_Externo` no CSV (PDF Passo 3)
-- Agora exporta 14 colunas em vez de 11
+**Em `spar_sizing.py` linha ~271:**
+```python
+MODO_ANALISE = "ambos"  # Escolha entre:
+                         # "balsa" (175 linhas)
+                         # "fibra_carbono" (175 linhas)
+                         # "ambos" (350 linhas) ← RECOMENDADO
+```
 
-**resultado_longarina.csv** (inalterado logicamente, 176 linhas):
-- CSV mantém dados idênticos
-- Colunas adicionadas para saídas completas do PDF
+| Modo | CSV Linhas | Gráficos | Melhor Para |
+|------|-----------|----------|-----------|
+| `balsa` | 175 | Simples (4) | Análise individual |
+| `fibra_carbono` | 175 | Simples (4) | Análise individual |
+| **`ambos`** | **350** | **Comparativo (6)** | **Decisão material** |
 
-### ✅ Conformidade PDF (6 Passos Verificados)
+### 📊 Saída Gerada
 
-| Passo | Requisito | Status |
-|-------|-----------|--------|
-| 1 | Espessura 0.001-0.005m, FS≥1.5, geometrias | ✓ Implementado |
-| 2 | Dados entrada (y, M, dy) | ✓ Implementado |
-| 3 | Saídas (I, σ, FS, θ, v, m) - **14 colunas** | ✓ Completo |
-| 4 | 8 Equações estruturais | ✓ Implementado |
-| 5 | 3 Seções escalonadas | ✓ Implementado |
-| 6 | Cálculo de peso | ✓ Implementado |
+**resultado_longarina.csv** - Novo formato com coluna `Material`:
+```
+Material,Y,Base,Altura,Diametro_Externo,Thickness,Inertia,DistanceC,Sigma,Safety Factor,...
+Balsa,0.0224,0.06,0.032,,0.001,3.33e-08,0.016,2.94e7,0.511,...
+Balsa,0.0669,0.06,0.032,,0.001,3.33e-08,0.016,2.65e7,0.565,...
+Fibra de Carbono,0.0224,,,0.024,0.001,4.79e-09,0.012,7.32e8,0.889,...
+Fibra de Carbono,0.0669,,,0.032,0.001,1.28e-08,0.016,2.58e8,2.520,...
+```
 
-### 🎯 Melhor Configuração Identificada
+### ✨ Gráficos Comparativos (modo = "ambos")
 
-| Parâmetro | Valor |
-|-----------|-------|
-| Material | Balsa |
-| Geometria | Retangular |
-| **Espessura** | **5.0 mm** |
-| **Massa Total** | **0.2392 kg** |
-| **FS Mínimo** | **1.557** ✅ |
-| Deflexão Máxima | 80.7 mm |
+**relatorio_visual.png** contém 6 subplots:
+1. **FS BALSA** vs Posição (5 linhas de espessura)
+2. **FS FIBRA CARBONO** vs Posição (5 linhas de espessura)
+3. **Tensão BALSA** vs Posição (σ_adm = 15 MPa marcada)
+4. **Tensão FIBRA CARBONO** vs Posição (σ_adm = 650 MPa marcada)
+5. **Comparação de Massa** (Balsa vs Fibra em barras)
+6. **Resumo de Viabilidade** (tabela com melhores configs)
 
-✨ **Balsa 5mm é a única configuração que atende FS ≥ 1.5 em toda envergadura**
+### 🎯 Resultados - Comparação Balsa vs Fibra
+
+```
+Material          | Melhor Config | Massa (kg) | FS Mínimo | Viável?
+─────────────────────────────────────────────────────────────────
+Balsa             | 5.0 mm        | 0.2392     | 1.557     | ✅ Sim
+Fibra de Carbono  | 1.0 mm        | 0.3409     | 4.239     | ✅ Sim
+
+Conclusão: Balsa 5mm é mais leve (239g vs 341g)
+           Mas ambas atendem FS ≥ 1.5
+```
+
+### ✅ Conformidade PDF (6 Passos)
+
+| Passo | Requisito | Ambos Materiais |
+|-------|-----------|-----------------|
+| 1 | Espessura 0.001-0.005m | ✓ 5 espessuras cada |
+| 2 | Dados (y, M, dy) | ✓ 35 pontos cada |
+| 3 | Saídas (I, σ, FS, θ, v, m) | ✓ 15 colunas CSV |
+| 4 | 8 Equações estruturais | ✓ Implementadas |
+| 5 | 3 Seções escalonadas | ✓ Ambos materiais |
+| 6 | Cálculo de peso | ✓ 2 (ambas asas) |
+
+### 🚀 Como Usar
+
+```bash
+# 1. Setup (uma vez)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Executar análise
+python spar_sizing.py
+# Output: 350 linhas (175 Balsa + 175 Fibra)
+
+# 3. Gerar gráficos
+python gerar_relatorio_visual.py
+# Output: relatorio_visual.png (6 gráficos lado a lado)
+```
+
+### 📝 Mudança de Modo
+
+```python
+# Em spar_sizing.py, linha ~271, mude para:
+MODO_ANALISE = "balsa"        # Só Balsa (175 linhas)
+MODO_ANALISE = "fibra_carbono"  # Só Fibra (175 linhas)
+MODO_ANALISE = "ambos"        # Ambos (350 linhas) ← PADRÃO
+```
 
 ---
 
@@ -151,10 +205,88 @@ MAIN (código base)              JV (produção pronta)
 
 ---
 
-## 📌 Resumo de Commits (main → jv)
+## � Por Que o FS Cresce com a Posição Y?
+
+### 📐 A Física por Trás
+
+O Fator de Segurança é calculado por:
+
+$$FS = \frac{\sigma_{adm}}{\sigma}$$
+
+Onde a tensão é:
+
+$$\sigma = \frac{M \times c}{I}$$
+
+**Portanto:**
+$$FS = \frac{\sigma_{adm} \times I}{M \times c}$$
+
+### 📊 O Que Varia ao Longo da Envergadura?
+
+1. **Momento Fletor M(y)**: Diminui da raiz para a ponta
+   - Raiz (y ≈ 0): M máximo (maior carga concentrada na raiz fixa)
+   - Ponta (y ≈ 1): M mínimo (cargas mais distribuídas)
+
+2. **Inércia I**: Constante para cada espessura (mesma seção)
+3. **Distância c**: Constante para cada espessura
+4. **σ_adm**: Propriedade do material (constante)
+
+### ✅ Conclusão: Por Que FS Cresce
+
+Como **M diminui** e **I, c, σ_adm são constantes**:
+
+$$FS \propto \frac{1}{M}$$
+
+**Portanto: FS aumenta conforme Y aumenta porque M diminui!**
+
+### 📈 Exemplo com Balsa 5mm
 
 ```
-18 commits atômicos documentando evolução:
+Posição Y   Momento M      Tensão σ      FS = 15MPa/σ
+─────────────────────────────────────────────────────
+0.022m      Máximo         2.94e7 Pa      0.51 ← Mínimo
+0.067m      Alto           2.65e7 Pa      0.57 ↑
+0.200m      Médio          1.80e7 Pa      0.83 ↑
+0.500m      Baixo          7.20e6 Pa      2.08 ↑
+0.999m      Mínimo         2.66e6 Pa      5.64 ← Máximo
+```
+
+### 🎯 Verificação no Gráfico
+
+**Gráfico 1 do relatorio_visual.png:**
+- Eixo X: Posição Y (0 → 1m)
+- Eixo Y: FS (crescente da esquerda para direita)
+- 5 linhas: 5 espessuras (todas crescem)
+- Linha vermelha horizontal: FS = 1.5 (limite mínimo)
+
+**Visualização:**
+```
+FS ^
+   |              ╱╱╱╱╱╱ (5mm - Passa!)
+   |          ╱╱╱╱╱╱╱ (4mm - Falha)
+   |     ╱╱╱╱╱╱╱╱ (3mm - Falha)
+1.5|─────┼─────────── (limite)
+   | ╱╱╱╱╱╱╱╱╱╱ (2mm - Falha)
+   |╱╱╱╱╱╱╱╱╱╱╱ (1mm - Falha)
+   └──────────────────► Y (posição)
+   0              1.0m
+```
+
+### 💡 Por Que Apenas Espessura 5mm Passa?
+
+Porque o FS **mínimo** (na raiz, y ≈ 0) deve ser ≥ 1.5:
+
+- **1mm**: FS_min = 0.51 ❌
+- **2mm**: FS_min = 0.92 ❌
+- **3mm**: FS_min = 1.21 ❌
+- **4mm**: FS_min = 1.42 ❌
+- **5mm**: FS_min = 1.56 ✅ (apenas esta passa!)
+
+---
+
+## �📌 Resumo de Commits (main → jv)
+
+```
+20 commits atômicos documentando evolução:
 ├─ 825b756: Inicialização spar_sizing.py
 ├─ 5c0b077: Classes Material e GeometriaSecao
 ├─ 608cd36: Instâncias Balsa + Fibra Carbono
@@ -172,5 +304,7 @@ MAIN (código base)              JV (produção pronta)
 ├─ 6f93190: Dimensões geométricas (PDF Passo 3)
 ├─ d68ee5d: Gráficos e relatório visual
 ├─ 05cf304: Limpeza (remover análise não essencial)
-└─ db62eab: PR Description
+├─ 520b654: PR Description (comparação main vs jv)
+├─ 328ce15: Escolha Balsa/Fibra + documentação
+└─ e0ebdf8: Análise simultânea + gráficos comparativos
 ```

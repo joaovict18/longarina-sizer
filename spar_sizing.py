@@ -107,3 +107,13 @@ def calculate_inertia_per_section(section):
     })
 
     return results
+
+
+# Calcula tensão de flexão (sigma = M*c/I)
+def calculate_bending_stress(M: float, C: float, I: float):
+    sigma = (M * C) / I
+    return sigma
+
+# Calcula fator de segurança (FS = sigma_adm / sigma)
+def calculate_safety_factor(sigma_adm: float, sigma_max: float):
+    return sigma_adm / sigma_max

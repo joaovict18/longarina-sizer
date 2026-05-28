@@ -270,8 +270,26 @@ def otimizar_longarina(sections, material, M):
 if __name__ == "__main__":
     all_results = []
 
-    # Analisa todas as configurações retangulares
-    for configuration in sectionsRetangular:
+    # ===== ESCOLHER MATERIAL =====
+    # Altere a variável abaixo para mudar qual material é analisado:
+    # - "balsa": Seção retangular com Balsa (E=3GPa, σ_adm=15MPa)
+    # - "fibra_carbono": Seção circular com Fibra Carbono (E=230GPa, σ_adm=650MPa)
+    
+    MATERIAL_SELECIONADO = "balsa"  # ← MUDE AQUI PARA "fibra_carbono" SE NECESSÁRIO
+    
+    if MATERIAL_SELECIONADO == "balsa":
+        print("🔍 Analisando BALSA (seção retangular)...")
+        configurations = sectionsRetangular
+        material_info = "Balsa - Seção Retangular"
+    elif MATERIAL_SELECIONADO == "fibra_carbono":
+        print("🔍 Analisando FIBRA DE CARBONO (seção circular/tubular)...")
+        configurations = sectionsCircular
+        material_info = "Fibra de Carbono - Seção Circular"
+    else:
+        raise ValueError(f"Material desconhecido: {MATERIAL_SELECIONADO}")
+
+    # Analisa todas as configurações do material selecionado
+    for configuration in configurations:
         results = analyze_span(configuration=configuration, df=df)
         all_results.extend(results)
 
@@ -283,4 +301,6 @@ if __name__ == "__main__":
     df_results = pd.DataFrame(all_results)
     df_results.to_csv("resultado_longarina.csv", index=False)
 
-    print("CSV exportado com sucesso: resultado_longarina.csv")
+    print(f"✅ Análise concluída: {material_info}")
+    print(f"📊 CSV exportado com sucesso: resultado_longarina.csv")
+    print(f"📈 Total de linhas: {len(df_results)} (35 pontos × {len(configurations)} espessuras)")

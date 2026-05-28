@@ -26,3 +26,53 @@ class GeometriaSecao:
         self.diametro_ext = diametro_ext
         self.espessura = espessura
         self.comprimento = comprimento
+
+
+# Instancia materiais com propriedades estruturais
+BALSA = Material("Balsa", 3e9, 15e6, 200.0)
+FIBRA_CARBONO = Material("Fibra de Carbono", 230e9, 650e6, 1750.0)
+
+# Cria configurações retangulares (Balsa) e circulares (Fibra de Carbono)
+sectionsRetangular = []
+sectionsCircular = []
+
+for espessura in np.arange(0.001, 0.006, 0.001):
+    # Configuração retangular com Balsa
+    segments = [
+        SparSegment(
+            y_start=0.0,
+            y_end=0.3,
+            section=SectionRectangular(base=0.06, altura=0.032, espessura=espessura, material=BALSA)
+        ),
+        SparSegment(
+            y_start=0.3,
+            y_end=0.7,
+            section=SectionRectangular(base=0.048, altura=0.02, espessura=espessura, material=BALSA)
+        ),
+        SparSegment(
+            y_start=0.7,
+            y_end=1.0,
+            section=SectionRectangular(base=0.04, altura=0.01, espessura=espessura, material=BALSA)
+        ),
+    ]
+    sectionsRetangular.append(segments)
+
+    # Configuração circular com Fibra de Carbono
+    segments = [
+        SparSegment(
+            y_start=0.0, 
+            y_end=0.3, 
+            section=SectionCircular(diametro_ext=0.024, espessura=espessura, material=FIBRA_CARBONO)
+        ),
+        SparSegment(
+            y_start=0.3, 
+            y_end=0.7, 
+            section=SectionCircular(diametro_ext=0.032, espessura=espessura, material=FIBRA_CARBONO)
+        ),
+        SparSegment(
+            y_start=0.7, 
+            y_end=1.0, 
+            section=SectionCircular(diametro_ext=0.04, espessura=espessura, material=FIBRA_CARBONO)
+        )
+    ]
+    sectionsCircular.append(segments)

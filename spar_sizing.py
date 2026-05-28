@@ -181,7 +181,7 @@ def get_segment(y: float, segments: list):
 
 
 # Executa análise estrutural completa em toda a envergadura
-def analyze_span(configuration, df):
+def analyze_span(configuration, df, material_nome):
     results = []
     theta = 0.0
     deflection = 0.0
@@ -227,6 +227,7 @@ def analyze_span(configuration, df):
 
         # Armazena resultados
         results.append({
+            "Material": material_nome,
             "Y": y,
             "Base": base,
             "Altura": altura,
@@ -270,28 +271,30 @@ def otimizar_longarina(sections, material, M):
 if __name__ == "__main__":
     all_results = []
 
-    # ===== ESCOLHER MATERIAL =====
-    # Altere a variável abaixo para mudar qual material é analisado:
-    # - "balsa": Seção retangular com Balsa (E=3GPa, σ_adm=15MPa)
-    # - "fibra_carbono": Seção circular com Fibra Carbono (E=230GPa, σ_adm=650MPa)
+    # ===== MODO DE ANÁLISE =====
+    # Escolha como analisar:
+    # - "balsa": Apenas BALSA (seção retangular)
+    # - "fibra_carbono": Apenas FIBRA DE CARBONO (seção circular)
+    # - "ambos": AMBOS os materiais (recomendado para comparação)
     
-    MATERIAL_SELECIONADO = "balsa"  # ← MUDE AQUI PARA "fibra_carbono" SE NECESSÁRIO
+    MODO_ANALISE = "ambos"  # ← MUDE AQUI PARA "balsa", "fibra_carbono" OU "ambos"
     
-    if MATERIAL_SELECIONADO == "balsa":
-        print("🔍 Analisando BALSA (seção retangular)...")
-        configurations = sectionsRetangular
-        material_info = "Balsa - Seção Retangular"
-    elif MATERIAL_SELECIONADO == "fibra_carbono":
-        print("🔍 Analisando FIBRA DE CARBONO (seção circular/tubular)...")
-        configurations = sectionsCircular
-        material_info = "Fibra de Carbono - Seção Circular"
-    else:
-        raise ValueError(f"Material desconhecido: {MATERIAL_SELECIONADO}")
+    print(f"🔍 Modo de análise: {MODO_ANALISE.upper()}")
+    print()
 
-    # Analisa todas as configurações do material selecionado
-    for configuration in configurations:
-        results = analyze_span(configuration=configuration, df=df)
-        all_results.extend(results)
+    # Analisa BALSA
+    if MODO_ANALISE in ["balsa", "ambos"]:
+        print("📊 Analisando BALSA (seção retangular)...")
+        for configuration in sectionsRetangular:
+            results = analyze_span(configuration=configuration, df=df, material_nome="Balsa")
+            all_results.extend(results)
+
+    # Analisa FIBRA DE CARBONO
+    if MODO_ANALISE in ["fibra_carbono", "ambos"]:
+        print("📊 Analisando FIBRA DE CARBONO (seção circular/tubular)...")
+        for configuration in sectionsCircular:
+            results = analyze_span(configuration=configuration, df=df, material_nome="Fibra de Carbono")
+            all_results.extend(results)
 
     # Converte dados para formato compatível com CSV
     for result in all_results:
@@ -301,6 +304,16 @@ if __name__ == "__main__":
     df_results = pd.DataFrame(all_results)
     df_results.to_csv("resultado_longarina.csv", index=False)
 
-    print(f"✅ Análise concluída: {material_info}")
-    print(f"📊 CSV exportado com sucesso: resultado_longarina.csv")
-    print(f"📈 Total de linhas: {len(df_results)} (35 pontos × {len(configurations)} espessuras)")
+    print()
+    print("✅ Análise concluída!")
+    print(f"📊 CSV exportado: resultado_longarina.csv")
+    
+    # Resumo por material
+    if MODO_ANALISE == "ambos":
+        balsa_count = len(df_results[df_results['Material'] == 'Balsa'])
+        fibra_count = len(df_results[df_results['Material'] == 'Fibra de Carbono'])
+        print(f"   ├─ BALSA: {balsa_count} linhas (35 pontos × 5 espessuras)")
+        print(f"   └─ FIBRA CARBONO: {fibra_count} linhas (35 pontos × 5 espessuras)")
+        print(f"   📈 Total: {len(df_results)} linhas")
+    else:
+        print(f"📈 Total de linhas: {len(df_results)}")

@@ -5,100 +5,128 @@
 No arquivo `spar_sizing.py`, **linha ~270**, procure por:
 
 ```python
-MATERIAL_SELECIONADO = "balsa"  # ← MUDE AQUI
+MODO_ANALISE = "ambos"  # ← MUDE AQUI
 ```
 
-### 🎯 Como mudar?
+### 🎯 Opções de Análise
 
-**Para analisar BALSA (padrão - retangular):**
+**1. Analisar apenas BALSA (retangular):**
 ```python
-MATERIAL_SELECIONADO = "balsa"
+MODO_ANALISE = "balsa"
 ```
-- ✅ Seção: Retangular (Base × Altura)
-- ✅ E = 3 GPa
-- ✅ σ_adm = 15 MPa
-- ✅ ρ = 200 kg/m³
+- Seção: Retangular (Base × Altura)
+- E = 3 GPa
+- σ_adm = 15 MPa
+- ρ = 200 kg/m³
+- **Saída**: 175 linhas no CSV (35 pontos × 5 espessuras)
 
-**Para analisar FIBRA DE CARBONO (circular/tubular):**
+**2. Analisar apenas FIBRA DE CARBONO (circular/tubular):**
 ```python
-MATERIAL_SELECIONADO = "fibra_carbono"
+MODO_ANALISE = "fibra_carbono"
 ```
-- ✅ Seção: Circular Tubular
-- ✅ E = 230 GPa  
-- ✅ σ_adm = 650 MPa
-- ✅ ρ = 1750 kg/m³
+- Seção: Circular Tubular
+- E = 230 GPa
+- σ_adm = 650 MPa
+- ρ = 1750 kg/m³
+- **Saída**: 175 linhas no CSV (35 pontos × 5 espessuras)
 
-### 📊 Como verificar qual está sendo analisado?
+**3. Analisar AMBOS simultaneamente (RECOMENDADO):**
+```python
+MODO_ANALISE = "ambos"
+```
+- Analisa Balsa E Fibra Carbono em uma única execução
+- **Saída**: 350 linhas no CSV (175 Balsa + 175 Fibra Carbono)
+- Coluna `Material` identifica cada material
+- Gráficos de comparação lado a lado (FS, Tensão, Deflexão, Massa)
 
-**Opção 1: Executar e ver a mensagem**
+### 📊 Como Verificar o Resultado
+
+**Opção 1: Pela mensagem ao executar**
 ```bash
 python spar_sizing.py
-# Mensagem mostra:
-# 🔍 Analisando BALSA (seção retangular)...
-# ou
-# 🔍 Analisando FIBRA DE CARBONO (seção circular/tubular)...
+
+# Saída mostra:
+# 🔍 Modo de análise: AMBOS
+# 📊 Analisando BALSA...
+# 📊 Analisando FIBRA DE CARBONO...
+# 📈 Total: 350 linhas (175 Balsa + 175 Fibra)
 ```
 
-**Opção 2: Verificar no CSV gerado**
+**Opção 2: Verificar coluna Material no CSV**
 ```python
 import pandas as pd
 df = pd.read_csv("resultado_longarina.csv")
 
-# BALSA: tem Base e Altura preenchidos
-df[['Base', 'Altura', 'Diametro_Externo']].iloc[0]
+# Ver materiais
+print(df['Material'].unique())
+# Output: ['Balsa', 'Fibra de Carbono']
 
-# Resultado BALSA:
-# Base: 0.06
-# Altura: 0.032
-# Diametro: NaN (vazio)
-
-# Resultado FIBRA:
-# Base: NaN
-# Altura: NaN
-# Diametro: 0.024
+# Contar linhas por material
+print(df['Material'].value_counts())
+# Balsa: 175
+# Fibra de Carbono: 175
 ```
 
-**Opção 3: Verificar JSON em Mass Per Section**
-```python
-import json
-df = pd.read_csv("resultado_longarina.csv")
-mass_json = df.iloc[0]['Mass Per Section']
-data = json.loads(mass_json.replace('""', '"'))
-print(data[0]['SectionType'])  # Mostra: "retangular" ou "circular"
+**Opção 3: Gráficos de Comparação**
+```bash
+# Executar para gerar relatorio_visual.png com gráficos comparativos
+python gerar_relatorio_visual.py
+
+# Se modo é "ambos", gera 6 gráficos lado a lado:
+# ├─ FS: Balsa vs Fibra Carbono
+# ├─ Tensão: Balsa vs Fibra Carbono
+# ├─ Comparação de Massa
+# └─ Resumo de Viabilidade
 ```
 
-### ⚡ Exemplo Prático
+### 💡 Comparação Rápida dos Materiais
 
-**Alterar para Fibra Carbono:**
+| Aspecto | Balsa | Fibra Carbono |
+|---------|-------|---------------|
+| **Geometria** | Retangular | Circular/Tubular |
+| **E (MPa)** | 3,000 | 230,000 |
+| **σ_adm (MPa)** | 15 | 650 |
+| **ρ (kg/m³)** | 200 | 1,750 |
+| **Menor t viável** | 5 mm | 1 mm |
+| **Massa (5mm)** | 0.2392 kg | 0.3409 kg |
+| **FS (5mm mín)** | 1.557 | 4.239 |
+
+### ⚡ Exemplo Prático - Modo Comparação
 
 ```bash
-# 1. Abrir editor
+# 1. Editar spar_sizing.py
 nano spar_sizing.py
+# Encontrar: MODO_ANALISE = "balsa"
+# Mudar para: MODO_ANALISE = "ambos"
+# Salvar (Ctrl+X → Y → Enter)
 
-# 2. Encontrar linha ~270 com:
-MATERIAL_SELECIONADO = "balsa"
-
-# 3. Mudar para:
-MATERIAL_SELECIONADO = "fibra_carbono"
-
-# 4. Salvar (Ctrl+X → Y → Enter)
-
-# 5. Executar
+# 2. Executar análise
 python spar_sizing.py
 
-# 6. Verificar resultado
-head -2 resultado_longarina.csv
+# Output:
+# 🔍 Modo de análise: AMBOS
+# 📊 Analisando BALSA (seção retangular)...
+# 📊 Analisando FIBRA DE CARBONO (seção circular/tubular)...
+# ✅ Análise concluída!
+# 📊 CSV exportado: resultado_longarina.csv
+#    ├─ BALSA: 175 linhas (35 pontos × 5 espessuras)
+#    └─ FIBRA CARBONO: 175 linhas (35 pontos × 5 espessuras)
+#    📈 Total: 350 linhas
+
+# 3. Gerar gráficos comparativos
+python gerar_relatorio_visual.py
+
+# Output mostra:
+# ✅ 2 materiais encontrados - gerando comparação lado a lado!
+# ✅ Gráfico salvo como: relatorio_visual.png
+# Tabela com resumo de massa por material e espessura
 ```
 
-### 📋 Checklist
+### 📋 Checklist Rápido
 
-- [ ] Linha 269-270: `MATERIAL_SELECIONADO = "balsa"` ou `"fibra_carbono"`
+- [ ] **Modo único** (1 material): mude para `"balsa"` ou `"fibra_carbono"`
+- [ ] **Modo comparação** (ambos): deixe em `"ambos"`
 - [ ] Executar: `python spar_sizing.py`
-- [ ] Verificar mensagem: "Analisando BALSA..." ou "...FIBRA DE CARBONO..."
-- [ ] Ver CSV: `head -2 resultado_longarina.csv`
-- [ ] Confirmar: Base/Altura preenchidos (BALSA) ou Diametro preenchido (FIBRA)
-
-### 🚀 Velocidade
-
-Mudar material = **1 linha de código** + executar programa
-Tempo total: ~5 segundos
+- [ ] Gerar gráficos: `python gerar_relatorio_visual.py`
+- [ ] CSV gerado: `resultado_longarina.csv` (150 ou 350 linhas)
+- [ ] Gráficos: `relatorio_visual.png` (comparativo ou simples)
